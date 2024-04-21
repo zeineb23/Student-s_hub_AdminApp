@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "427799045150",
+    "project_id": "studentshub-54ac7",
+    "storage_bucket": "studentshub-54ac7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427799045150:android:02b0eed6ec5de1111a7a0f",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_6"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0iv5uLyhWz34TCj8OnA6tJJ4Yerga4jQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
