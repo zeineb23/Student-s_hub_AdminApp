@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_6/pages/home_page.dart';
 
 class NewAccountPage extends StatefulWidget {
   @override
@@ -23,10 +24,7 @@ class _NewAccountPageState extends State<NewAccountPage> {
       );
 
       // Enregistrement des autres détails de l'utilisateur dans Firestore
-      await _firestore
-          .collection('etudiants')
-          .doc(userCredential.user!.uid)
-          .set({
+      await _firestore.collection('admins').doc(userCredential.user!.uid).set({
         'displayName': _displayNameController.text.trim(),
         'email': _emailController.text.trim(),
         // Vous pouvez ajouter d'autres détails de l'utilisateur ici
@@ -43,6 +41,11 @@ class _NewAccountPageState extends State<NewAccountPage> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
+                  // Redirect to HomePage after creating account
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => HomePage()),
+                  );
                 },
                 child: Text('OK'),
               ),

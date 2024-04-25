@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_6/components/app_bar_drawer.dart';
+import 'package:intl/intl.dart';
 
 class AllMessagesPage extends StatelessWidget {
   @override
@@ -61,8 +62,32 @@ class AllMessagesPage extends StatelessWidget {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Catégorie: ${categoryData['nom_cat']}"),
-                            SizedBox(height: 10),
+                            Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors
+                                    .grey[200], // Couleur de fond de la bande
+                                borderRadius: BorderRadius.circular(
+                                    8), // Bord arrondi de la bande
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("Catégorie: ${categoryData['nom_cat']}"),
+                                  IconButton(
+                                    icon: Icon(Icons.add),
+                                    onPressed: () {
+                                      _showNewMessageDialog(context,
+                                          document.id, categoryData['nom_cat']);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                                height:
+                                    10), // Espace entre la bande et la liste des messages
                             ListView(
                               shrinkWrap: true,
                               physics: NeverScrollableScrollPhysics(),
@@ -74,9 +99,18 @@ class AllMessagesPage extends StatelessWidget {
 
                                 return ListTile(
                                   title: Text(messageData['message']),
-                                  subtitle: Text(
-                                      "Nouveauté: ${isNewMessage(messageData['timestamp']) ? 'Oui' : 'Non'}"),
-                                  // Add any other widget to display additional data from the message
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('${messageData['message']}'),
+                                      SizedBox(height: 5),
+                                      Text(
+                                        'Date de publication: ${DateFormat('yyyy-MM-dd HH:mm').format(messageData['timestamp'].toDate())}', // Date de publication
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
                                 );
                               }).toList(),
                             ),
@@ -107,5 +141,59 @@ class AllMessagesPage extends StatelessWidget {
 
     // Check if the difference is less than or equal to 2 days
     return differenceInDays <= 2;
+  }
+
+  Future<void> _showNewMessageDialog(
+      BuildContext context, String categoryId, String categoryName) async {
+    String titre = '';
+    String message = '';
+
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Nouveau Message pour $categoryName"),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(
+                  onChanged: (value) => titre = value,
+                  decoration: InputDecoration(labelText: 'Titre'),
+                ),
+                TextField(
+                  onChanged: (value) => message = value,
+                  decoration: InputDecoration(labelText: 'Message'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Ajouter le nouveau message à Firestore
+                FirebaseFirestore.instance
+                    .collection('categorie')
+                    .doc(categoryId)
+                    .collection('messages')
+                    .add({
+                  'titre': titre,
+                  'message': message,
+                  'timestamp': Timestamp.now(),
+                });
+
+                Navigator.of(context).pop();
+              },
+              child: Text('Ajouter'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

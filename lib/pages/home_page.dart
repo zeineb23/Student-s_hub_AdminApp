@@ -12,8 +12,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final User? user = FirebaseAuth.instance.currentUser;
-
   late TextEditingController _searchController;
 
   @override
