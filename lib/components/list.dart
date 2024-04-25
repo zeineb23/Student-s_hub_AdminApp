@@ -54,6 +54,7 @@ class CollectionViewer extends StatelessWidget {
                     Map<String, dynamic> data =
                         document.data() as Map<String, dynamic>;
                     return ListTile(
+                      leading: Icon(Icons.person),
                       title: Text(data['displayName']),
                       subtitle: Text(data['email']),
                       // Add any other widget to display additional data from the document

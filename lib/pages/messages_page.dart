@@ -1,5 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 class MessagesPage extends StatefulWidget {
@@ -32,12 +32,62 @@ class _MessagesPageState extends State<MessagesPage> {
 
   bool isNewMessage(Timestamp timestamp) {
     DateTime currentDate = DateTime.now();
-
     DateTime messageDate = timestamp.toDate();
-
     int differenceInDays = currentDate.difference(messageDate).inDays;
-
     return differenceInDays <= 2;
+  }
+
+  Future<void> _showNewMessageDialog(BuildContext context) async {
+    String message = '';
+    String content = '';
+
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Ajouter un nouveau message à ${widget.categoryName}"),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(
+                  onChanged: (value) => message = value,
+                  decoration: InputDecoration(labelText: 'Titre'),
+                ),
+                TextField(
+                  onChanged: (value) => content = value,
+                  decoration: InputDecoration(labelText: 'Message'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Ajouter le nouveau message à Firestore
+                FirebaseFirestore.instance
+                    .collection('categorie')
+                    .doc(widget.categoryId)
+                    .collection('messages')
+                    .add({
+                  'message': message,
+                  'content': content,
+                  'timestamp': Timestamp.now(),
+                });
+
+                Navigator.of(context).pop();
+              },
+              child: Text('Ajouter'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -55,7 +105,7 @@ class _MessagesPageState extends State<MessagesPage> {
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: () {
-              // Implement logout logic here
+              // Implémentez ici la logique de déconnexion
             },
           ),
         ],
@@ -72,7 +122,7 @@ class _MessagesPageState extends State<MessagesPage> {
                   setState(() {});
                 },
                 decoration: InputDecoration(
-                  hintText: 'Search messages...',
+                  hintText: 'Rechercher des messages...',
                   prefixIcon: Icon(Icons.search),
                 ),
               ),
@@ -88,7 +138,7 @@ class _MessagesPageState extends State<MessagesPage> {
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
+                  return Text('Erreur: ${snapshot.error}');
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -108,30 +158,43 @@ class _MessagesPageState extends State<MessagesPage> {
                     final timestamp = data['timestamp'] as Timestamp;
                     final newMessage = isNewMessage(timestamp);
 
-                    // Filter messages based on search term
+                    // Filtrer les messages en fonction du terme de recherche
                     if (searchTerm.isNotEmpty &&
                         !message.toLowerCase().contains(searchTerm)) {
                       return SizedBox.shrink();
                     }
 
-                    return ListTile(
-                      title: Text(message),
-                      subtitle: Text(content),
-                      trailing: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                              'Date: ${DateFormat('yyyy-MM-dd HH:mm').format(timestamp.toDate())}'),
-                          if (newMessage) // Display blue bubble for new messages
-                            Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.blue,
-                              ),
+                    return GestureDetector(
+                      onTap: () {
+                        final data = docs[index].data() as Map<String, dynamic>;
+                        final currentMessage = data['message'] as String? ?? '';
+                        final currentContent = data['content'] as String? ?? '';
+                        _showEditMessageDialog(context, docs[index].reference,
+                            currentMessage, currentContent);
+                      },
+                      child: ListTile(
+                        title: Text(message),
+                        subtitle: Text(content),
+                        trailing: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Date: ${DateFormat('yyyy-MM-dd HH:mm').format(timestamp.toDate())}',
+                              style: TextStyle(
+                                  fontSize:
+                                      12), // Adjust the font size as needed
                             ),
-                        ],
+                            if (newMessage) // Afficher une bulle bleue pour les nouveaux messages
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -141,6 +204,72 @@ class _MessagesPageState extends State<MessagesPage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showNewMessageDialog(context);
+        },
+        child: Icon(Icons.add),
+      ),
     );
   }
+}
+
+Future<void> _showEditMessageDialog(
+    BuildContext context,
+    DocumentReference messageRef,
+    String currentMessage,
+    String currentContent) async {
+  String message = currentMessage;
+  String content = currentContent;
+
+  return showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Modifier le message"),
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              TextField(
+                controller: TextEditingController(text: message),
+                onChanged: (value) => message = value,
+                decoration: InputDecoration(labelText: 'Titre'),
+              ),
+              TextField(
+                controller: TextEditingController(text: content),
+                onChanged: (value) => content = value,
+                decoration: InputDecoration(labelText: 'Message'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: () async {
+              await messageRef.delete();
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              // Modifier le message dans Firestore
+              await messageRef.update({
+                'message': message,
+                'content': content,
+              });
+              Navigator.of(context).pop();
+            },
+            child: Text('Enregistrer'),
+          ),
+        ],
+      );
+    },
+  );
 }

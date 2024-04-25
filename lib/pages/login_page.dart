@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_6/components/my_button.dart';
 import 'package:flutter_application_6/components/my_textfield.dart';
+import 'package:flutter_application_6/pages/home_page.dart';
 import 'package:flutter_application_6/pages/new_account.dart';
 
 class LoginPage extends StatefulWidget {
@@ -13,23 +14,34 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
-  Future<void> signUserIn() async {
-    //show loading
-    showDialog(
-        context: context,
-        builder: (context) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        });
 
-    //try sign in
+  Future<void> signUserIn() async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      builder: (context) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
     try {
+      // Sign in
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: usernameController.text, password: passwordController.text);
-      Navigator.pop(context);
+        email: usernameController.text,
+        password: passwordController.text,
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(),
+        ),
+      );
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context);
+      // Handle sign-in errors
+      Navigator.pop(context); // Dismiss loading indicator
       if (e.code == 'user-not-found') {
         wrongEmailMessage();
       } else if (e.code == 'wrong-password') {
@@ -63,43 +75,38 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.grey[300],
-        body: SafeArea(
-            child: Center(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+      backgroundColor: Colors.grey[300],
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               const SizedBox(height: 50),
-              //Login
               const Icon(
                 Icons.lock,
                 size: 100,
               ),
               const SizedBox(height: 50),
-              // Welcome back
-              Text('Welcome back you\'ve been missed!',
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 16,
-                  )),
-
+              Text(
+                'Welcome back you\'ve been missed!',
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 16,
+                ),
+              ),
               const SizedBox(height: 25),
-              //User textfield
               MyTextField(
                 controller: usernameController,
                 hintText: 'Username',
                 obscureText: false,
               ),
               const SizedBox(height: 10),
-              //Password textfield
               MyTextField(
                 controller: passwordController,
                 hintText: 'Password',
                 obscureText: true,
               ),
               const SizedBox(height: 10),
-
-              //Forgot password
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 25.0),
                 child: Row(
@@ -113,50 +120,33 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 25),
-
-              //Signin button
               MyButton(onTap: signUserIn),
               const SizedBox(height: 30),
-
-              //Or continue with
               Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Divider(
-                          thickness: 0.5,
-                          color: Colors.grey[400],
-                        ),
+                padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        thickness: 0.5,
+                        color: Colors.grey[400],
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        child: Text('Or continue with',
-                            style: TextStyle(color: Colors.grey[700])),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: Text('Or continue with',
+                          style: TextStyle(color: Colors.grey[700])),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        thickness: 0.5,
+                        color: Colors.grey[400],
                       ),
-                      Expanded(
-                        child: Divider(
-                          thickness: 0.5,
-                          color: Colors.grey[400],
-                        ),
-                      )
-                    ],
-                  )),
+                    )
+                  ],
+                ),
+              ),
               const SizedBox(height: 30),
-              //Google
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 25,
-                  ),
-                ],
-              ),
-
-              const SizedBox(
-                height: 30,
-              ),
-              //Not a membre?
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -178,6 +168,10 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ],
               ),
-            ]))));
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
