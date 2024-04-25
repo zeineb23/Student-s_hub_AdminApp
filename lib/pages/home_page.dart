@@ -2,15 +2,30 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application_6/components/app_bar_drawer.dart';
-import 'package:flutter_application_6/pages/login_page.dart';
 import 'package:flutter_application_6/pages/messages_page.dart';
 
-class HomePage extends StatelessWidget {
-  HomePage({Key? key});
+class HomePage extends StatefulWidget {
+  HomePage({Key? key}) : super(key: key);
 
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   final User? user = FirebaseAuth.instance.currentUser;
-  void signUserOut() {
-    FirebaseAuth.instance.signOut();
+
+  late TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   final CollectionReference categoryCollection =
@@ -28,23 +43,27 @@ class HomePage extends StatelessWidget {
     }
   }
 
-  void _deleteCategory(String categoryId) async {
+  void _deleteCategory(String? categoryId) async {
     try {
-      await categoryCollection.doc(categoryId).delete();
-      print("Category deleted successfully");
+      if (categoryId != null) {
+        await categoryCollection.doc(categoryId).delete();
+        print("Category deleted successfully");
+      }
     } catch (e) {
       print("Error deleting category: $e");
     }
   }
 
-  void _editCategory(String categoryId, String newCategoryName,
+  void _editCategory(String? categoryId, String newCategoryName,
       String newCategoryDescription) async {
     try {
-      await categoryCollection.doc(categoryId).update({
-        "nom_cat": newCategoryName,
-        "description_cat": newCategoryDescription,
-      });
-      print("Category edited successfully");
+      if (categoryId != null) {
+        await categoryCollection.doc(categoryId).update({
+          "nom_cat": newCategoryName,
+          "description_cat": newCategoryDescription,
+        });
+        print("Category edited successfully");
+      }
     } catch (e) {
       print("Error editing category: $e");
     }
@@ -62,13 +81,16 @@ class HomePage extends StatelessWidget {
       drawer: CustomDrawer(),
       body: Column(
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(8.0),
-            child: Text(
-              'Les Catégories',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {});
+              },
+              decoration: InputDecoration(
+                hintText: 'Search categories...',
+                prefixIcon: Icon(Icons.search),
               ),
             ),
           ),
@@ -85,14 +107,24 @@ class HomePage extends StatelessWidget {
                   return Center(child: CircularProgressIndicator());
                 }
 
+                final List<DocumentSnapshot> docs = snapshot.data!.docs;
+
+                final searchTerm = _searchController.text.toLowerCase();
+
                 return ListView.builder(
-                  itemCount: snapshot.data!.docs.length,
+                  itemCount: docs.length,
                   itemBuilder: (context, index) {
-                    Map<String, dynamic> data = snapshot.data!.docs[index]
-                        .data() as Map<String, dynamic>;
-                    String categoryId = snapshot.data!.docs[index].id;
-                    String categoryName =
-                        data['nom_cat']; // Récupération du nom de la catégorie
+                    final data = docs[index].data() as Map<String, dynamic>;
+                    final categoryId = docs[index].id;
+                    final categoryName = data['nom_cat'] as String? ?? '';
+                    final categoryDescription =
+                        data['description_cat'] as String? ?? '';
+
+                    // Filter categories based on search term
+                    if (searchTerm.isNotEmpty &&
+                        !categoryName.toLowerCase().contains(searchTerm)) {
+                      return SizedBox.shrink();
+                    }
 
                     return GestureDetector(
                       onTap: () {
@@ -100,8 +132,9 @@ class HomePage extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => MessagesPage(
-                                categoryId: categoryId,
-                                categoryName: categoryName),
+                              categoryId: categoryId,
+                              categoryName: categoryName,
+                            ),
                           ),
                         );
                       },
@@ -115,34 +148,26 @@ class HomePage extends StatelessWidget {
                           horizontal: 16.0,
                         ),
                         child: ListTile(
-                          title: Text(data['nom_cat']),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(data['description_cat']),
-                              Row(
-                                children: [
-                                  Spacer(),
-                                  MaterialButton(
-                                    onPressed: () {
-                                      _deleteCategory(categoryId);
-                                    },
-                                    padding: EdgeInsets.zero,
-                                    shape: CircleBorder(),
-                                    color: Colors.red,
-                                    child:
-                                        Icon(Icons.delete, color: Colors.white),
-                                  ),
-                                  SizedBox(width: 8),
-                                  MaterialButton(
-                                    onPressed: () {
+                          title: Text(categoryName),
+                          subtitle: Text(categoryDescription),
+                          trailing: Container(
+                            padding: EdgeInsets.only(
+                              top: 8.0,
+                            ), // Adjust the top padding as needed
+                            child: PopupMenuButton(
+                              itemBuilder: (BuildContext context) =>
+                                  <PopupMenuEntry>[
+                                PopupMenuItem(
+                                  child: ListTile(
+                                    leading: Icon(Icons.edit),
+                                    title: Text('Edit'),
+                                    onTap: () {
                                       showDialog(
                                         context: context,
                                         builder: (BuildContext context) {
-                                          String newCategoryName =
-                                              data['nom_cat'];
+                                          String newCategoryName = categoryName;
                                           String newCategoryDescription =
-                                              data['description_cat'];
+                                              categoryDescription;
                                           return AlertDialog(
                                             title: Text('Edit Category'),
                                             content: Column(
@@ -157,8 +182,7 @@ class HomePage extends StatelessWidget {
                                                           'Category Name'),
                                                   controller:
                                                       TextEditingController(
-                                                          text:
-                                                              data['nom_cat']),
+                                                          text: categoryName),
                                                 ),
                                                 TextField(
                                                   onChanged: (value) {
@@ -170,8 +194,8 @@ class HomePage extends StatelessWidget {
                                                           'Category Description'),
                                                   controller:
                                                       TextEditingController(
-                                                          text: data[
-                                                              'description_cat']),
+                                                          text:
+                                                              categoryDescription),
                                                 ),
                                               ],
                                             ),
@@ -179,9 +203,10 @@ class HomePage extends StatelessWidget {
                                               ElevatedButton(
                                                 onPressed: () {
                                                   _editCategory(
-                                                      categoryId,
-                                                      newCategoryName,
-                                                      newCategoryDescription);
+                                                    categoryId,
+                                                    newCategoryName,
+                                                    newCategoryDescription,
+                                                  );
                                                   Navigator.of(context).pop();
                                                 },
                                                 child: Text('Save'),
@@ -191,28 +216,19 @@ class HomePage extends StatelessWidget {
                                         },
                                       );
                                     },
-                                    padding: EdgeInsets.zero,
-                                    shape: CircleBorder(),
-                                    color: Colors.blue,
-                                    child:
-                                        Icon(Icons.edit, color: Colors.white),
                                   ),
-                                  SizedBox(width: 8),
-                                  IconButton(
-                                    icon: Icon(Icons.arrow_forward_ios),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              LoginPage(), // Navigate to MessagesPage
-                                        ),
-                                      );
+                                ),
+                                PopupMenuItem(
+                                  child: ListTile(
+                                    leading: Icon(Icons.delete),
+                                    title: Text('Delete'),
+                                    onTap: () {
+                                      _deleteCategory(categoryId);
                                     },
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

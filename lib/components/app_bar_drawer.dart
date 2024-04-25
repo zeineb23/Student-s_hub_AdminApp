@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_6/pages/admin_page.dart';
+import 'package:flutter_application_6/pages/all_messages_page.dart';
 import 'package:flutter_application_6/pages/home_page.dart';
 import 'package:flutter_application_6/pages/student_page.dart';
 
@@ -99,7 +100,12 @@ class CustomDrawer extends StatelessWidget {
             leading: Icon(Icons.update), // Icon for Messages
             title: Text('Messages'),
             onTap: () {
-              // Handle Messages press
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AllMessagesPage(),
+                ),
+              );
             },
           ),
           ListTile(
