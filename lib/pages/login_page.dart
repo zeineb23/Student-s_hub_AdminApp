@@ -54,8 +54,17 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       context: context,
       builder: (context) {
-        return const AlertDialog(
-          title: Text('Incorrect Email'),
+        return AlertDialog(
+          title: Text('Adresse e-mail incorrecte'),
+          content: Text('Le mail que vous avez saisi est incorrect.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
         );
       },
     );
@@ -65,8 +74,17 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       context: context,
       builder: (context) {
-        return const AlertDialog(
-          title: Text('Incorrect Password'),
+        return AlertDialog(
+          title: Text('Mot de passe incorrect'),
+          content: Text('Le mot de passe que vous avez saisi est incorrect.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
         );
       },
     );
@@ -82,13 +100,15 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 50),
-              const Icon(
-                Icons.lock,
-                size: 100,
+              Container(
+                height: 100,
+                child: Center(
+                  child: Image.asset('assets/LogoISI.png'),
+                ),
               ),
               const SizedBox(height: 50),
               Text(
-                'Welcome back you\'ve been missed!',
+                'Bienvenu cher administrateur de l\'ISI!',
                 style: TextStyle(
                   color: Colors.grey[700],
                   fontSize: 16,
@@ -97,28 +117,16 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 25),
               MyTextField(
                 controller: usernameController,
-                hintText: 'Username',
+                hintText: 'Utilisateur',
                 obscureText: false,
               ),
               const SizedBox(height: 10),
               MyTextField(
                 controller: passwordController,
-                hintText: 'Password',
+                hintText: 'Mot de passe',
                 obscureText: true,
               ),
               const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Forgot password?',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 25),
               MyButton(onTap: signUserIn),
               const SizedBox(height: 30),
@@ -131,11 +139,6 @@ class _LoginPageState extends State<LoginPage> {
                         thickness: 0.5,
                         color: Colors.grey[400],
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Text('Or continue with',
-                          style: TextStyle(color: Colors.grey[700])),
                     ),
                     Expanded(
                       child: Divider(

@@ -1,6 +1,9 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class MessagesPage extends StatefulWidget {
   final String categoryId;
@@ -37,6 +40,42 @@ class _MessagesPageState extends State<MessagesPage> {
     return differenceInDays <= 2;
   }
 
+  Future<void> sendNotification(String deviceToken) async {
+    final String serverKey =
+        'AAAAY5rPZB4:APA91bHMKzC_cDH4zEEI_9eSaTazESIGSggsBZexLl2Iz3sTKvjMGleP3TcM4i7wB4D5iFiLy4jNcLM9yUr23d4UtiF81f47LXakzs-R-kqY3l_Kuf5nqBa2tqQNaytg8fmBE0kJYZub'; // Your Firebase Cloud Messaging server key
+    final String fcmUrl = 'https://fcm.googleapis.com/fcm/send';
+
+    final Map<String, dynamic> notification = {
+      'notification': {
+        'title': 'New Massage',
+        'body': 'You have a new message added!',
+      },
+      'data': {
+        'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+        'screen': 'HOME_SCREEN',
+      },
+      'priority': 'high',
+      'to': deviceToken,
+    };
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': 'key=$serverKey',
+    };
+
+    final response = await http.post(
+      Uri.parse(fcmUrl),
+      headers: headers,
+      body: jsonEncode(notification),
+    );
+
+    if (response.statusCode == 200) {
+      print('Notification sent successfully');
+    } else {
+      print('Failed to send notification: ${response.body}');
+    }
+  }
+
   Future<void> _showNewMessageDialog(BuildContext context) async {
     String message = '';
     String content = '';
@@ -45,13 +84,13 @@ class _MessagesPageState extends State<MessagesPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Ajouter un nouveau message à ${widget.categoryName}"),
+          title: Text("Add a new message to ${widget.categoryName}"),
           content: SingleChildScrollView(
             child: Column(
               children: [
                 TextField(
                   onChanged: (value) => message = value,
-                  decoration: InputDecoration(labelText: 'Titre'),
+                  decoration: InputDecoration(labelText: 'Title'),
                 ),
                 TextField(
                   onChanged: (value) => content = value,
@@ -65,12 +104,12 @@ class _MessagesPageState extends State<MessagesPage> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Annuler'),
+              child: Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
-                // Ajouter le nouveau message à Firestore
-                FirebaseFirestore.instance
+              onPressed: () async {
+                // Add the new message to Firestore
+                await FirebaseFirestore.instance
                     .collection('categorie')
                     .doc(widget.categoryId)
                     .collection('messages')
@@ -80,9 +119,12 @@ class _MessagesPageState extends State<MessagesPage> {
                   'timestamp': Timestamp.now(),
                 });
 
+                // Send notification using Firebase Cloud Messaging
+                sendNotification(
+                    "fQA0sMg8RqyotQtX_VbacJ:APA91bEVRphQ3LM45bOy5hGkCiQdvA9vrOB_yu3JnsYapRuX8MOwpWONxMsRbEYDdSA80jQ-dgm5AF-VfmoAt_1LBxnUWcY72KhnjLrCU1taVwz9w9uohGOhFDZvL1JLjtwxGv8_W-P6");
                 Navigator.of(context).pop();
               },
-              child: Text('Ajouter'),
+              child: Text('Add'),
             ),
           ],
         );

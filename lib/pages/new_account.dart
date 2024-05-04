@@ -29,7 +29,11 @@ class _NewAccountPageState extends State<NewAccountPage> {
         'email': _emailController.text.trim(),
         // Vous pouvez ajouter d'autres détails de l'utilisateur ici
       });
-
+      Navigator.pushReplacement(
+        // Navigate to homepage
+        context,
+        MaterialPageRoute(builder: (context) => HomePage()),
+      );
       // Afficher un message de succès
       showDialog(
         context: context,
@@ -41,8 +45,8 @@ class _NewAccountPageState extends State<NewAccountPage> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  // Redirect to HomePage after creating account
                   Navigator.pushReplacement(
+                    // Navigate to homepage
                     context,
                     MaterialPageRoute(builder: (context) => HomePage()),
                   );

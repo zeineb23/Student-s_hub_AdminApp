@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_6/pages/admin_page.dart';
 import 'package:flutter_application_6/pages/all_messages_page.dart';
 import 'package:flutter_application_6/pages/home_page.dart';
+import 'package:flutter_application_6/pages/profil_page.dart';
 import 'package:flutter_application_6/pages/student_page.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -59,6 +60,18 @@ class CustomDrawer extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          ListTile(
+            leading: Icon(Icons.person),
+            title: Text('Profil'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfilPage(),
+                ),
+              );
+            },
           ),
           ListTile(
             leading: Icon(Icons.admin_panel_settings),
