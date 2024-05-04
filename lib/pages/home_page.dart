@@ -30,40 +30,56 @@ class _HomePageState extends State<HomePage> {
       FirebaseFirestore.instance.collection('categorie');
 
   void _addCategory(String categoryName, String categoryDescription) async {
-    try {
-      await categoryCollection.add({
-        "nom_cat": categoryName,
-        "description_cat": categoryDescription,
-      });
-      print("Category added successfully");
-    } catch (e) {
-      print("Error adding category: $e");
+    if (categoryName.isNotEmpty && categoryDescription.isNotEmpty) {
+      try {
+        await categoryCollection.add({
+          "nom_cat": categoryName,
+          "description_cat": categoryDescription,
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Category added successfully")),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error adding category: $e")),
+        );
+      }
     }
   }
 
   void _deleteCategory(String? categoryId) async {
-    try {
-      if (categoryId != null) {
+    if (categoryId != null) {
+      try {
         await categoryCollection.doc(categoryId).delete();
-        print("Category deleted successfully");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Category deleted successfully")),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error deleting category: $e")),
+        );
       }
-    } catch (e) {
-      print("Error deleting category: $e");
     }
   }
 
   void _editCategory(String? categoryId, String newCategoryName,
       String newCategoryDescription) async {
-    try {
-      if (categoryId != null) {
+    if (categoryId != null &&
+        newCategoryName.isNotEmpty &&
+        newCategoryDescription.isNotEmpty) {
+      try {
         await categoryCollection.doc(categoryId).update({
           "nom_cat": newCategoryName,
           "description_cat": newCategoryDescription,
         });
-        print("Category edited successfully");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Category edited successfully")),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error editing category: $e")),
+        );
       }
-    } catch (e) {
-      print("Error editing category: $e");
     }
   }
 
@@ -118,7 +134,6 @@ class _HomePageState extends State<HomePage> {
                     final categoryDescription =
                         data['description_cat'] as String? ?? '';
 
-                    // Filter categories based on search term
                     if (searchTerm.isNotEmpty &&
                         !categoryName.toLowerCase().contains(searchTerm)) {
                       return SizedBox.shrink();
@@ -142,87 +157,38 @@ class _HomePageState extends State<HomePage> {
                         ),
                         elevation: 3,
                         margin: EdgeInsets.symmetric(
-                          vertical: 8.0,
-                          horizontal: 16.0,
-                        ),
+                            vertical: 8.0, horizontal: 16.0),
                         child: ListTile(
                           title: Text(categoryName),
                           subtitle: Text(categoryDescription),
                           trailing: Container(
-                            padding: EdgeInsets.only(
-                              top: 8.0,
-                            ), // Adjust the top padding as needed
+                            padding: EdgeInsets.only(top: 8.0),
                             child: PopupMenuButton(
+                              onSelected: (value) {
+                                switch (value) {
+                                  case 'edit':
+                                    showEditDialog(context, categoryId,
+                                        categoryName, categoryDescription);
+                                    break;
+                                  case 'delete':
+                                    _deleteCategory(categoryId);
+                                    break;
+                                }
+                              },
                               itemBuilder: (BuildContext context) =>
                                   <PopupMenuEntry>[
                                 PopupMenuItem(
+                                  value: 'edit',
                                   child: ListTile(
                                     leading: Icon(Icons.edit),
                                     title: Text('Edit'),
-                                    onTap: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          String newCategoryName = categoryName;
-                                          String newCategoryDescription =
-                                              categoryDescription;
-                                          return AlertDialog(
-                                            title: Text('Edit Category'),
-                                            content: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: <Widget>[
-                                                TextField(
-                                                  onChanged: (value) {
-                                                    newCategoryName = value;
-                                                  },
-                                                  decoration: InputDecoration(
-                                                      labelText:
-                                                          'Category Name'),
-                                                  controller:
-                                                      TextEditingController(
-                                                          text: categoryName),
-                                                ),
-                                                TextField(
-                                                  onChanged: (value) {
-                                                    newCategoryDescription =
-                                                        value;
-                                                  },
-                                                  decoration: InputDecoration(
-                                                      labelText:
-                                                          'Category Description'),
-                                                  controller:
-                                                      TextEditingController(
-                                                          text:
-                                                              categoryDescription),
-                                                ),
-                                              ],
-                                            ),
-                                            actions: <Widget>[
-                                              ElevatedButton(
-                                                onPressed: () {
-                                                  _editCategory(
-                                                    categoryId,
-                                                    newCategoryName,
-                                                    newCategoryDescription,
-                                                  );
-                                                  Navigator.of(context).pop();
-                                                },
-                                                child: Text('Save'),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    },
                                   ),
                                 ),
                                 PopupMenuItem(
+                                  value: 'delete',
                                   child: ListTile(
                                     leading: Icon(Icons.delete),
                                     title: Text('Delete'),
-                                    onTap: () {
-                                      _deleteCategory(categoryId);
-                                    },
                                   ),
                                 ),
                               ],
@@ -240,47 +206,92 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              String categoryName = '';
-              String categoryDescription = '';
-              return AlertDialog(
-                title: Text('Add Category'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    TextField(
-                      onChanged: (value) {
-                        categoryName = value;
-                      },
-                      decoration: InputDecoration(labelText: 'Category Name'),
-                    ),
-                    TextField(
-                      onChanged: (value) {
-                        categoryDescription = value;
-                      },
-                      decoration:
-                          InputDecoration(labelText: 'Category Description'),
-                    ),
-                  ],
-                ),
-                actions: <Widget>[
-                  ElevatedButton(
-                    onPressed: () {
-                      _addCategory(categoryName, categoryDescription);
-                      Navigator.of(context).pop();
-                    },
-                    child: Text('Add'),
-                  ),
-                ],
-              );
-            },
-          );
+          showAddDialog(context);
         },
         tooltip: 'Add Category',
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  void showEditDialog(BuildContext context, String? categoryId,
+      String initialCategoryName, String initialCategoryDescription) {
+    TextEditingController nameController =
+        TextEditingController(text: initialCategoryName);
+    TextEditingController descriptionController =
+        TextEditingController(text: initialCategoryDescription);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit Category'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'Category Name'),
+              ),
+              TextField(
+                controller: descriptionController,
+                decoration: InputDecoration(labelText: 'Category Description'),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              onPressed: () {
+                if (categoryId != null) {
+                  _editCategory(
+                    categoryId,
+                    nameController.text,
+                    descriptionController.text,
+                  );
+                }
+                Navigator.of(context).pop();
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showAddDialog(BuildContext context) {
+    TextEditingController nameController = TextEditingController();
+    TextEditingController descriptionController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Add Category'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'Category Name'),
+              ),
+              TextField(
+                controller: descriptionController,
+                decoration: InputDecoration(labelText: 'Category Description'),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              onPressed: () {
+                _addCategory(nameController.text, descriptionController.text);
+                Navigator.of(context).pop();
+              },
+              child: Text('Add'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

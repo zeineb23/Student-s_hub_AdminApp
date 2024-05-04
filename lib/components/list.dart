@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application_6/components/app_bar_drawer.dart';
+import 'package:flutter_application_6/pages/login_page.dart';
 
 class CollectionViewer extends StatelessWidget {
   final String collectionName;
@@ -16,23 +17,24 @@ class CollectionViewer extends StatelessWidget {
         user: FirebaseAuth.instance.currentUser,
         signOut: () {
           FirebaseAuth.instance.signOut();
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => LoginPage()));
         },
       ),
       drawer: CustomDrawer(),
       body: Column(
         children: [
-          SizedBox(height: 20), // Add some space at the top
+          SizedBox(height: 20),
           Center(
-            // Center the title
             child: Text(
-              "Les " + collectionName, // Use the collection name as the title
+              "Les " + collectionName,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          SizedBox(height: 20), // Add some space below the title
+          SizedBox(height: 20),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -57,7 +59,6 @@ class CollectionViewer extends StatelessWidget {
                       leading: Icon(Icons.person),
                       title: Text(data['displayName']),
                       subtitle: Text(data['email']),
-                      // Add any other widget to display additional data from the document
                     );
                   }).toList(),
                 );

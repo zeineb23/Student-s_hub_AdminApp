@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_6/components/app_bar_drawer.dart';
+import 'package:flutter_application_6/pages/login_page.dart';
+import 'package:flutter_application_6/services/categories.dart';
+import 'package:flutter_application_6/services/messages.dart';
 import 'package:intl/intl.dart';
 
 class AllMessagesPage extends StatelessWidget {
+  final MessagesCRUD _messagesCRUD = MessagesCRUD();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -12,6 +16,8 @@ class AllMessagesPage extends StatelessWidget {
         user: FirebaseAuth.instance.currentUser,
         signOut: () {
           FirebaseAuth.instance.signOut();
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => LoginPage()));
         },
       ),
       drawer: CustomDrawer(),
@@ -31,9 +37,7 @@ class AllMessagesPage extends StatelessWidget {
           SizedBox(height: 20), // Add some space below the title
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('categorie')
-                  .snapshots(),
+              stream: CategoriesCRUD.getCategories().asStream(),
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (snapshot.hasError) {
@@ -130,16 +134,9 @@ class AllMessagesPage extends StatelessWidget {
   }
 
   bool isNewMessage(Timestamp timestamp) {
-    // Get the current date
     DateTime currentDate = DateTime.now();
-
-    // Get the date of the message
     DateTime messageDate = timestamp.toDate();
-
-    // Calculate the difference in days
     int differenceInDays = currentDate.difference(messageDate).inDays;
-
-    // Check if the difference is less than or equal to 2 days
     return differenceInDays <= 2;
   }
 
@@ -176,17 +173,7 @@ class AllMessagesPage extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                // Ajouter le nouveau message à Firestore
-                FirebaseFirestore.instance
-                    .collection('categorie')
-                    .doc(categoryId)
-                    .collection('messages')
-                    .add({
-                  'titre': titre,
-                  'message': message,
-                  'timestamp': Timestamp.now(),
-                });
-
+                _messagesCRUD.addMessage(categoryId, titre, message);
                 Navigator.of(context).pop();
               },
               child: Text('Ajouter'),
